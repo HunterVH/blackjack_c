@@ -9,6 +9,12 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef _WIN32
+	#define CLEARSCREEN "cls"
+#else
+	#define CLEARSCREEN "clear"
+#endif
+
 #define DEALERHIT 16
 
 enum suit{
@@ -226,7 +232,7 @@ void determineWinner(player player1, player dealer){
 
 void wait(short time){
 	sleep(time);
-	system("clear");
+	system(CLEARSCREEN);
 }
 
 void dealerPlays(player player1, player dealer, struct card* deck, int* deckTracker){
@@ -269,18 +275,20 @@ int main(void){
 	int tracker = 0;
 	int playing = 1;
 	int response = 1;
-	char userInput[5];
+	char userInput[32];
 	struct card* deck = createDeck();
 	player player1 = (player)malloc(sizeof(struct play));
 	player1->hand = (struct card*)malloc(11*sizeof(struct card));
 	player1->handSize = 0;
 	player1->hasAce = 0;
 	player1->handValue = 0;
+	player1->hasBusted = 0;
 	player dealer = (player)malloc(sizeof(struct play));
 	dealer->hand = (struct card*)malloc(11*sizeof(struct card));
 	dealer->handSize = 0;
 	dealer->hasAce = 0;
 	dealer->handValue = 0;
+	dealer->hasBusted = 0;
 
 	shuffleDeck(deck, 104);
 	while(playing){
@@ -292,8 +300,7 @@ int main(void){
 			printf("\nDealer:\n");
 			printPlayerHand(dealer, 1);
 			printf("\n(H)it, (S)tay, or (Q)uit\n");
-			fgets(userInput, 5, stdin);
-			fseek(stdin, 0, SEEK_END);
+			fgets(userInput, 32, stdin);
 			if(toupper(userInput[0]) == 'H'){
 				printf("Hit.\n");
 				hit(deck, &tracker, player1);
