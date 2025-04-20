@@ -113,6 +113,9 @@ void hit(struct card* deck, int* deckTracker, player player1){
 		*deckTracker = 0;
 	}
 	player1->hand[player1->handSize] = deck[*deckTracker];
+	if(deck[*deckTracker].cardValue == 1){
+		player1->hasAce = 1;
+	}
 	player1->handValue += player1->hand[player1->handSize].cardValue;
 	player1->handSize++;
 	*deckTracker += 1;
@@ -132,7 +135,11 @@ void printPlayerHand(player player1, short isDealer){
 	if(isDealer){
 		printCard(player1->hand[0]);
 		printf(", *");
-		printf("\n\tTotal: %d\n", player1->hand[0].cardValue);
+		printf("\n\tTotal: ");
+		if(player1->hand[0].cardValue == 1){
+			printf("%d, ", player1->hand[0].cardValue+10, player1->hand[0].cardValue);
+		}
+		printf("%d\n", player1->hand[0].cardValue);
 	}
 	else{
 		for(int i=0; i<player1->handSize; i++){
@@ -141,13 +148,19 @@ void printPlayerHand(player player1, short isDealer){
 				printf(", ");
 			}
 		}
-		printf("\n\tTotal: %d\n", player1->handValue);
-	}
-}
-
-void clearHand(player player1){
-	for(int i=0; i<11; i++){
-		//player1->hand[i] = NULL;
+		printf("\n\tTotal: ");
+		if(player1->hasBusted){
+			printf("BUSTED\n");
+		}
+		else if(player1->hasAce){
+			if((player1->handValue)+10 <= 21)
+				printf("%d, %d\n", player1->handValue+10, (player1->handValue));
+			else
+				printf("%d\n", player1->handValue);
+		}
+		else{
+			printf("%d\n", player1->handValue);
+		}
 	}
 }
 
@@ -158,6 +171,24 @@ void determineWinner(player player1, player dealer){
 	printPlayerHand(dealer, 0);
 
 	printf("\n");
+
+	short dealHandValue;
+	short playHandValue;
+
+	if(player1->hasAce){
+		playHandValue = (player1->handValue)+10 <= 21 ? player1->handValue+10 : player1->handValue;
+	}
+	else{
+		playHandValue = player1->handValue;
+	}
+
+	if(dealer->hasAce){
+		dealHandValue = (dealer->handValue)+10 <= 21 ? dealer->handValue+10 : dealer->handValue;
+	}
+	else{
+		dealHandValue = dealer->handValue;
+	}
+
 
 	if(player1->hasBusted || dealer->hasBusted){
 		if(player1->hasBusted && dealer->hasBusted){
@@ -171,7 +202,10 @@ void determineWinner(player player1, player dealer){
 		}
 	}
 	else{
-		if(player1->handValue > dealer->handValue){
+		if(playHandValue == dealHandValue){
+			printf("A Push, No Winner\n");
+		}
+		else if(playHandValue > dealHandValue){
 			printf("Player Wins\n");
 		}
 		else{
@@ -179,13 +213,11 @@ void determineWinner(player player1, player dealer){
 		}
 	}
 	
-	//clearHand(player1);
 	player1->handValue = 0;
 	player1->hasAce = 0;
 	player1->handSize = 0;
 	player1->hasBusted = 0;
 
-	//clearHand(dealer);
 	dealer->handValue = 0;
 	dealer->hasAce = 0;
 	dealer->handSize = 0;
@@ -202,7 +234,14 @@ void dealerPlays(player player1, player dealer, struct card* deck, int* deckTrac
 	printPlayerHand(player1, 0);
 	printf("\nDealer:\n");
 	printPlayerHand(dealer, 0);
-	while(dealer->handValue <= DEALERHIT){
+	short handValue;
+	if(dealer->hasAce){
+		handValue = (dealer->handValue)+10 <= 21 ? dealer->handValue+10 : dealer->handValue;
+	}
+	else{
+		handValue = dealer->handValue;
+	}
+	while(handValue <= DEALERHIT){
 		sleep(1);
 		printf("Dealer Hits\n");
 		wait(2);
@@ -211,6 +250,12 @@ void dealerPlays(player player1, player dealer, struct card* deck, int* deckTrac
 		printPlayerHand(player1, 0);
 		printf("\nDealer:\n");
 		printPlayerHand(dealer, 0);
+		if(dealer->hasAce){
+			handValue = (dealer->handValue)+10 <= 21 ? dealer->handValue+10 : dealer->handValue;
+		}
+		else{
+			handValue = dealer->handValue;
+		}
 	}
 	sleep(1);
 	if(dealer->hasBusted)
@@ -248,6 +293,7 @@ int main(void){
 			printPlayerHand(dealer, 1);
 			printf("\n(H)it, (S)tay, or (Q)uit\n");
 			fgets(userInput, 5, stdin);
+			fseek(stdin, 0, SEEK_END);
 			if(toupper(userInput[0]) == 'H'){
 				printf("Hit.\n");
 				hit(deck, &tracker, player1);
