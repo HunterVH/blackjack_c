@@ -299,7 +299,6 @@ int main(void){
 				hit(deck, &tracker, player1);
 				if(player1->hasBusted){
 					response = 0;
-					printf("BUSTED!");
 				}
 				else
 					response = 1;
